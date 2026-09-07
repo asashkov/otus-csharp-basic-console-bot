@@ -14,7 +14,7 @@ public class Program
 
         Console.WriteLine($"Hello!\n" +
             $"Available commands to interact with the console bot: " +
-            $"{StartEndpoint}, {HelpEndpoint}, {InfoEndpoint}, {EchoEndpoint}, {ExitEndpoint}");
+            $"{StartEndpoint}, {HelpEndpoint}, {InfoEndpoint}, {ExitEndpoint}");
 
         string? userName = null;
         bool isNameTaken = false;
@@ -26,9 +26,9 @@ public class Program
             var input = Console.ReadLine();
             string[] inputParams = [];
 
-            if (!string.IsNullOrEmpty(input))
+            if (!string.IsNullOrWhiteSpace(input))
             {
-                var inputWithParams = input.Split(' ');
+                var inputWithParams = input.Trim().Split(' ');
                 input = inputWithParams[0];
                 inputParams = inputWithParams.Skip(1).ToArray();
             }
@@ -44,17 +44,18 @@ public class Program
                     {
                         Console.Write("Enter your name: ");
 
-                        userName = Console.ReadLine();
+                        var name = Console.ReadLine();
 
-                        if (!string.IsNullOrEmpty(userName))
+                        if (!string.IsNullOrWhiteSpace(name))
                         {
+                            userName = name.Trim();
                             isNameTaken = true;
                         }
                     }
 
                     break;
                 case HelpEndpoint:
-                    PrintHelpEndpointText();
+                    PrintHelpEndpointText(isNameTaken);
                     break;
                 case InfoEndpoint:
                     Console.WriteLine("ConsoleBot 0.0.1\n" + $"Cteation Date: {creationDate}");
@@ -98,13 +99,16 @@ public class Program
         Console.WriteLine();
     }
 
-    private static void PrintHelpEndpointText()
+    private static void PrintHelpEndpointText(bool isNameTaken)
     {
+        string echoEndpointText = !isNameTaken ? "" : 
+            $"{EchoEndpoint}\t - You make to print on screen some text if you type it after command using a space character for separation.\n";
+
         Console.WriteLine("To interact with the console bot you need to use following commands:\n" +
             $"{StartEndpoint}\t - Program entry point. Type your name to get more available commands.\n" +
             $"{HelpEndpoint}\t - Display this info.\n" +
             $"{InfoEndpoint}\t - Display program version and creation date.\n" +
-            $"{EchoEndpoint}\t - You make to print on screen some text if you type it after command using a space character for separation.\n" +
+            echoEndpointText +
             $"{ExitEndpoint}\t - Exit from program.");
     }
 }
