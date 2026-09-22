@@ -6,7 +6,12 @@ public class Program
     private const string HelpEndpoint = "/help";
     private const string InfoEndpoint = "/info";
     private const string EchoEndpoint = "/echo";
+    private const string AddTaskEndpoint = "/addtask";
+    private const string ShowTasksEndpoint = "/showtasks";
+    private const string RemoveTaskEndpoint = "/removetask";
     private const string ExitEndpoint = "/exit";
+
+    private static List<string> _tasks = new List<string>();
 
     static void Main()
     {
@@ -58,10 +63,19 @@ public class Program
                     PrintHelpEndpointText(isNameTaken);
                     break;
                 case InfoEndpoint:
-                    Console.WriteLine("ConsoleBot 0.0.1\n" + $"Cteation Date: {creationDate}");
+                    Console.WriteLine("ConsoleBot 0.0.2\n" + $"Cteation Date: {creationDate}");
                     break;
                 case EchoEndpoint:
                     PrintEchoEndpointText(isNameTaken, inputParams);
+                    break;
+                case AddTaskEndpoint:
+                    AddTask();
+                    break;
+                case ShowTasksEndpoint:
+                    ShowTasks();
+                    break;
+                case RemoveTaskEndpoint:
+                    RemoveTask();
                     break;
                 case ExitEndpoint:
                     return;
@@ -101,14 +115,92 @@ public class Program
 
     private static void PrintHelpEndpointText(bool isNameTaken)
     {
-        string echoEndpointText = !isNameTaken ? "" : 
-            $"{EchoEndpoint}\t - You make to print on screen some text if you type it after command using a space character for separation.\n";
+        string echoEndpointText = string.Empty;
+        string addTaskEndpointText = string.Empty;
+        string showTasksEndpointText = string.Empty;
+        string removeEndpointText = string.Empty;
+
+        if (isNameTaken)
+        {
+            echoEndpointText = 
+                $"{EchoEndpoint}\t\t - You make to print on screen some text if you type it after command using a space character for separation.\n";
+
+            addTaskEndpointText =
+                $"{AddTaskEndpoint}\t - Add new task to list.\n";
+
+            showTasksEndpointText =
+                $"{ShowTasksEndpoint}\t - Show all tasks in list.\n";
+
+            removeEndpointText =
+                $"{RemoveTaskEndpoint}\t - Remove task from the list by number.\n";
+        }
 
         Console.WriteLine("To interact with the console bot you need to use following commands:\n" +
-            $"{StartEndpoint}\t - Program entry point. Type your name to get more available commands.\n" +
-            $"{HelpEndpoint}\t - Display this info.\n" +
-            $"{InfoEndpoint}\t - Display program version and creation date.\n" +
+            $"{StartEndpoint}\t\t - Program entry point. Type your name to get more available commands.\n" +
+            $"{HelpEndpoint}\t\t - Display this info.\n" +
+            $"{InfoEndpoint}\t\t - Display program version and creation date.\n" +
             echoEndpointText +
-            $"{ExitEndpoint}\t - Exit from program.");
+            addTaskEndpointText +
+            showTasksEndpointText +
+            removeEndpointText +
+            $"{ExitEndpoint}\t\t - Exit from program.");
+    }
+
+    private static void AddTask()
+    {
+        Console.Write("Введите описание задачи: ");
+
+        var task = Console.ReadLine();
+
+        if (string.IsNullOrWhiteSpace(task))
+        {
+            Console.WriteLine($"Вы ввели некорректное описание задачи.");
+            return;
+        }
+
+        _tasks.Add(task);
+
+        Console.WriteLine($"Задача \"{task}\" добавлена.");
+    }
+
+    private static void ShowTasks()
+    {
+        if (_tasks.Count == 0)
+        {
+            Console.WriteLine("Список задач пуст.");
+            return;
+        }
+
+        for (int i = 0; i < _tasks.Count; i++)
+        {
+            Console.WriteLine($"{i + 1}. {_tasks[i]}");
+        }
+    }
+
+    private static void RemoveTask()
+    {
+        if (_tasks.Count == 0)
+        {
+            Console.WriteLine("Список задач пуст.");
+            return;
+        }
+
+        ShowTasks();
+
+        Console.Write("Введите номер задачи для удаления: ");
+
+        if (!int.TryParse(Console.ReadLine(), out int taskNumber)
+            || (taskNumber < 1 || taskNumber > _tasks.Count))
+        {
+            Console.WriteLine($"Неверный номер задачи. Пожалуйста, введите корректное значение (1 - {_tasks.Count})");
+            return;
+        }
+        else
+        {
+            var task = _tasks[taskNumber - 1];
+
+            _tasks.Remove(task);
+            Console.WriteLine($"Задача \"{task}\" удалена.");
+        }
     }
 }
