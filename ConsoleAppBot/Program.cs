@@ -163,29 +163,28 @@ public class Program
         Console.WriteLine($"Задача \"{task}\" добавлена.");
     }
 
-    private static void ShowTasks()
+    private static bool ShowTasks()
     {
         if (_tasks.Count == 0)
         {
             Console.WriteLine("Список задач пуст.");
-            return;
+            return false;
         }
 
         for (int i = 0; i < _tasks.Count; i++)
         {
             Console.WriteLine($"{i + 1}. {_tasks[i]}");
         }
+
+        return true;
     }
 
     private static void RemoveTask()
     {
-        if (_tasks.Count == 0)
+        if (!ShowTasks())
         {
-            Console.WriteLine("Список задач пуст.");
             return;
         }
-
-        ShowTasks();
 
         Console.Write("Введите номер задачи для удаления: ");
 
