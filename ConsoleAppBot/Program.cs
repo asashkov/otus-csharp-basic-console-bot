@@ -17,8 +17,8 @@ public class Program
     {
         DateOnly creationDate = DateOnly.Parse("05.09.2026");
 
-        Console.WriteLine($"Hello!\n" +
-            $"Available commands to interact with the console bot: " +
+        Console.WriteLine($"Привет!\n" +
+            $"Для взаимодействия доступны следующие команды: " +
             $"{StartEndpoint}, {HelpEndpoint}, {InfoEndpoint}, {ExitEndpoint}");
 
         string? userName = null;
@@ -43,11 +43,11 @@ public class Program
                 case StartEndpoint:
                     if (isNameTaken)
                     {
-                        Console.WriteLine($"You are logged in as {userName}. Use one of the other commands.");
+                        Console.WriteLine($"Вы уже ввели имя {userName}. Используйте другую команду.");
                     }
                     else
                     {
-                        Console.Write("Enter your name: ");
+                        Console.Write("Введите Ваше имя: ");
 
                         var name = Console.ReadLine();
 
@@ -63,7 +63,7 @@ public class Program
                     PrintHelpEndpointText(isNameTaken);
                     break;
                 case InfoEndpoint:
-                    Console.WriteLine("ConsoleBot 0.0.2\n" + $"Cteation Date: {creationDate}");
+                    Console.WriteLine("ConsoleBot 0.0.3\n" + $"Дата создания: {creationDate}");
                     break;
                 case EchoEndpoint:
                     PrintEchoEndpointText(isNameTaken, inputParams);
@@ -80,7 +80,7 @@ public class Program
                 case ExitEndpoint:
                     return;
                 default:
-                    Console.WriteLine("You typed an incorrect command, try again.");
+                    Console.WriteLine("Вы ввели некорректную команду. Попробуйте еще раз.");
                     break;
             }
         }
@@ -88,17 +88,17 @@ public class Program
 
     private static void PrintMenu(bool isNameTaken, string userName)
     {
-        string greating = !isNameTaken ? "Please" : $"{userName}, please";
+        string greating = !isNameTaken ? "Пожалуйста" : $"{userName}, пожалуйста";
 
         Console.WriteLine();
-        Console.Write($"{greating} enter the command: ");
+        Console.Write($"{greating} введите команду: ");
     }
 
     private static void PrintEchoEndpointText(bool isNameTaken, string[] inputParams)
     {
         if (!isNameTaken)
         {
-            Console.WriteLine($"You are not logged in. Type your name using {StartEndpoint} command.");
+            Console.WriteLine($"Вы не ввели свое имя, используйте для этого команду {StartEndpoint}.");
             return;
         }
 
@@ -123,27 +123,27 @@ public class Program
         if (isNameTaken)
         {
             echoEndpointText = 
-                $"{EchoEndpoint}\t\t - You make to print on screen some text if you type it after command using a space character for separation.\n";
+                $"{EchoEndpoint}\t\t - Вы можете отобразить на экране текст, введя его после команды через пробел.\n";
 
             addTaskEndpointText =
-                $"{AddTaskEndpoint}\t - Add new task to list.\n";
+                $"{AddTaskEndpoint}\t - Добавить в список новую задачу.\n";
 
             showTasksEndpointText =
-                $"{ShowTasksEndpoint}\t - Show all tasks in list.\n";
+                $"{ShowTasksEndpoint}\t - Отобразить все задачи в списке.\n";
 
             removeEndpointText =
-                $"{RemoveTaskEndpoint}\t - Remove task from the list by number.\n";
+                $"{RemoveTaskEndpoint}\t - Удалить задачу из списка по ее номеру.\n";
         }
 
-        Console.WriteLine("To interact with the console bot you need to use following commands:\n" +
-            $"{StartEndpoint}\t\t - Program entry point. Type your name to get more available commands.\n" +
-            $"{HelpEndpoint}\t\t - Display this info.\n" +
-            $"{InfoEndpoint}\t\t - Display program version and creation date.\n" +
+        Console.WriteLine("Для взаимодействия с ботом используйте следующие команды:\n" +
+            $"{StartEndpoint}\t\t - Точка входа. Введите свое имя для доступа к большему количеству команд.\n" +
+            $"{HelpEndpoint}\t\t - Отобразить данную справочную информацию.\n" +
+            $"{InfoEndpoint}\t\t - Отобразить версию и дату создания приложения.\n" +
             echoEndpointText +
             addTaskEndpointText +
             showTasksEndpointText +
             removeEndpointText +
-            $"{ExitEndpoint}\t\t - Exit from program.");
+            $"{ExitEndpoint}\t\t - Выход из программы.");
     }
 
     private static void AddTask()
