@@ -1,6 +1,4 @@
-﻿using System.Runtime.Serialization;
-
-namespace ConsoleBot;
+﻿namespace ConsoleBot;
 
 public class Program
 {
@@ -57,7 +55,7 @@ public class Program
                     _initialized = true;
                 }
 
-                MainEntryPrompt(isNameTaken, userName!);
+                DataEntryPrompt(isNameTaken, userName!);
 
                 var input = Console.ReadLine();
                 string[] inputParams = [];
@@ -148,7 +146,7 @@ public class Program
         }
     }
 
-    private static void MainEntryPrompt(bool isNameTaken, string userName)
+    private static void DataEntryPrompt(bool isNameTaken, string userName)
     {
         string greating = !isNameTaken ? "Пожалуйста," : $"{userName}, пожалуйста,";
 
