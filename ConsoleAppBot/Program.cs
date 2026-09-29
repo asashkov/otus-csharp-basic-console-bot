@@ -2,7 +2,7 @@
 
 public class Program
 {
-    private static DateOnly _creationDate = new DateOnly(2026, 9, 5);
+    private static DateOnly _creationDate = new(2026, 9, 5);
     private const string AppVersion = "0.1.0";
 
     private const string StartEndpoint = "/start";
@@ -20,7 +20,7 @@ public class Program
     private static int _maxTasksCount = 100;
     private static int _maxTaskLength = 100;
 
-    private static List<string> _tasks = new List<string>(_maxTasksCount);
+    private static List<string> _tasks = [];
 
     private static bool _initialized = false;
 
@@ -43,15 +43,13 @@ public class Program
                     Console.WriteLine();
                     Console.Write("Введите максимально допустимое количество задач: ");
 
-                    var tasksCount = ParseAndValidateInt(Console.ReadLine()!, MinTasksCount, _maxTasksCount);
-                    _maxTasksCount = tasksCount;
+                    _maxTasksCount = ParseAndValidateInt(Console.ReadLine()!, MinTasksCount, _maxTasksCount);
 
                     Console.Write("Введите максимально допустимую длину задачи: ");
 
-                    var taskLength = ParseAndValidateInt(Console.ReadLine()!, MinTaskLength, _maxTaskLength);
-                    _maxTaskLength = taskLength;
+                    _maxTaskLength = ParseAndValidateInt(Console.ReadLine()!, MinTaskLength, _maxTaskLength);
 
-                    _tasks = new List<string>(tasksCount);
+                    _tasks = new List<string>(_maxTasksCount);
                     _initialized = true;
                 }
 
@@ -64,7 +62,7 @@ public class Program
                 {
                     var inputWithParams = input.Trim().Split(' ');
                     input = inputWithParams[0];
-                    inputParams = inputWithParams.Skip(1).ToArray();
+                    inputParams = [.. inputWithParams.Skip(1)];
                 }
 
                 switch (input)
@@ -119,23 +117,22 @@ public class Program
                     $"Type: {e.GetType}\n" +
                     $"Message: {e.Message}\n" +
                     $"Stacktrace: {e.StackTrace}\n" +
-                    $"InnerException: {e.InnerException}");
+                    $"InnerException: {e?.InnerException?.Message}");
             }
         }
     }
 
     private static int ParseAndValidateInt(string? str, int min, int max)
     {
-        var parsedValue = int.Parse(str!);
+        if (int.TryParse(str!, out int parsedValue))
+        {
+            if (parsedValue >= min && parsedValue <= max)
+            {
+                return parsedValue;
+            }
+        }
 
-        if (parsedValue >= min && parsedValue <= max)
-        {
-            return parsedValue;
-        }
-        else
-        {
-            throw new ArgumentException($"Допустимое значение от {min} до {max}.");
-        }
+        throw new ArgumentException($"Допустимое значение от {min} до {max}.");
     }
 
     private static void ValidateString(string? str)
@@ -149,7 +146,7 @@ public class Program
     private static void DataEntryPrompt(bool isNameTaken, string userName)
     {
         string greating = !isNameTaken ? "Пожалуйста," : $"{userName}, пожалуйста,";
-
+        
         Console.WriteLine();
         Console.Write($"{greating} введите команду: ");
     }
