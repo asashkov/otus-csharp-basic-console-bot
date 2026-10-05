@@ -1,6 +1,4 @@
-﻿using System.Diagnostics.Metrics;
-
-namespace ConsoleBot;
+﻿namespace ConsoleBot;
 
 public class Program
 {
@@ -248,6 +246,12 @@ public class Program
 
     private static void AddTask(ToDoUser user)
     {
+        if (user is null)
+        {
+            Console.WriteLine($"Для добавления задач необходимо ввести Ваше имя, используя команду \"{StartEndpoint}\".");
+            return;
+        }
+
         Console.Write("Введите описание задачи: ");
 
         var newTask = Console.ReadLine();
@@ -266,10 +270,9 @@ public class Program
                 throw new DuplicateTaskException(newTask);
         }
 
-        var newToDoItem = new ToDoItem(user, newTask);
-        _tasks.Add(newToDoItem);
+        _tasks.Add(new ToDoItem(user, newTask));
 
-        Console.WriteLine($"Задача \"{newToDoItem.Name}\" добавлена.");
+        Console.WriteLine($"Задача \"{newTask}\" добавлена.");
     }
 
     private static bool ShowTasks()
@@ -281,16 +284,23 @@ public class Program
         }
 
         var counter = 0;
+        var hasActiveTasks = false;
 
         for (int i = 0; i < _tasks.Count; i++)
         {
             if (_tasks[i].State.Equals(ToDoItemState.Active))
             {
                 Console.WriteLine($"{++counter}. {_tasks[i]}");
+                hasActiveTasks = true;
             }
         }
 
-        return true;
+        if (!hasActiveTasks)
+        {
+            Console.WriteLine("Активные задачи отсутствуют.");
+        }
+
+        return hasActiveTasks;
     }
 
     private static void ShowAllTasks()
@@ -320,14 +330,14 @@ public class Program
         var task = _tasks[taskNumber - 1];
 
         _tasks.Remove(task);
-        Console.WriteLine($"Задача \"{task}\" удалена.");
+        Console.WriteLine($"Задача \"{task.Name}\" удалена.");
     }
 
     private static void CompleteTask(string[] inputParams)
     {
         if (inputParams.Length != 1)
         {
-            Console.WriteLine("Введите некорректное значение id задачи.");
+            Console.WriteLine("Введите корректное значение id задачи.");
             return;
         }
 
@@ -337,12 +347,12 @@ public class Program
 
         foreach (var task in _tasks)
         {
-            if (task.Id.Equals(taskId))
+            if (task.Id.ToString().Equals(taskId))
             {
                 task.State = ToDoItemState.Completed;
                 task.StateChangedAt = DateTime.UtcNow;
 
-                Console.WriteLine($"Задача \"{task}\" завершена.");
+                Console.WriteLine($"Задача \"{task.Name}\" завершена.");
                 return;
             }
         }
