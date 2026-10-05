@@ -1,17 +1,23 @@
-﻿namespace ConsoleBot;
+﻿using System.Diagnostics.Metrics;
+
+namespace ConsoleBot;
 
 public class Program
 {
-    private static DateOnly _creationDate = new(2026, 9, 5);
-    private const string AppVersion = "0.1.0";
+    private static readonly DateOnly _creationDate = new(2026, 9, 5);
+    private const string AppVersion = "0.2.0";
 
     private const string StartEndpoint = "/start";
     private const string HelpEndpoint = "/help";
     private const string InfoEndpoint = "/info";
     private const string EchoEndpoint = "/echo";
+    
     private const string AddTaskEndpoint = "/addtask";
     private const string ShowTasksEndpoint = "/showtasks";
+    private const string ShowAllTasksEndpoint = "/showalltasks";
     private const string RemoveTaskEndpoint = "/removetask";
+    private const string CompleteTaskEndpoint = "/completetask";
+
     private const string ExitEndpoint = "/exit";
 
     private const int MinTasksCount = 1;
@@ -20,7 +26,7 @@ public class Program
     private static int _maxTasksCount = 100;
     private static int _maxTaskLength = 100;
 
-    private static List<string> _tasks = [];
+    private static List<ToDoItem> _tasks = [];
 
     private static bool _initialized = false;
 
@@ -30,10 +36,8 @@ public class Program
             $"Для взаимодействия доступны следующие команды: " +
             $"{StartEndpoint}, {HelpEndpoint}, {InfoEndpoint}, {ExitEndpoint}");
 
-        string? userName = null;
-        bool isNameTaken = false;
+        ToDoUser? user = null;
 
-        
         while (true)
         {
             try
@@ -49,11 +53,11 @@ public class Program
 
                     _maxTaskLength = ParseAndValidateInt(Console.ReadLine()!, MinTaskLength, _maxTaskLength);
 
-                    _tasks = new List<string>(_maxTasksCount);
+                    _tasks = new List<ToDoItem>(_maxTasksCount);
                     _initialized = true;
                 }
 
-                DataEntryPrompt(isNameTaken, userName!);
+                DataEntryPrompt(user!);
 
                 var input = Console.ReadLine();
                 string[] inputParams = [];
@@ -68,25 +72,31 @@ public class Program
                 switch (input)
                 {
                     case StartEndpoint:
-                        Start(ref isNameTaken, ref userName!);
+                        Start(ref user!);
                         break;
                     case HelpEndpoint:
-                        Help(isNameTaken);
+                        Help(user!);
                         break;
                     case InfoEndpoint:
                         Info();
                         break;
                     case EchoEndpoint:
-                        Echo(isNameTaken, inputParams);
+                        Echo(user!, inputParams);
                         break;
                     case AddTaskEndpoint:
-                        AddTask();
+                        AddTask(user);
                         break;
                     case ShowTasksEndpoint:
                         ShowTasks();
                         break;
+                    case ShowAllTasksEndpoint:
+                        ShowAllTasks();
+                        break;
                     case RemoveTaskEndpoint:
                         RemoveTask();
+                        break;
+                    case CompleteTaskEndpoint:
+                        CompleteTask(inputParams);
                         break;
                     case ExitEndpoint:
                         return;
@@ -143,30 +153,29 @@ public class Program
         }
     }
 
-    private static void DataEntryPrompt(bool isNameTaken, string userName)
+    private static void DataEntryPrompt(ToDoUser user)
     {
-        string greating = !isNameTaken ? "Пожалуйста," : $"{userName}, пожалуйста,";
+        string greating = user is null ? "Пожалуйста," : $"{user.TelegramUserName}, пожалуйста,";
         
         Console.WriteLine();
         Console.Write($"{greating} введите команду: ");
     }
 
-    private static void Start(ref bool isNameTaken, ref string userName)
+    private static void Start(ref ToDoUser user)
     {
-        if (isNameTaken)
+        if (user is not null)
         {
-            Console.WriteLine($"Вы уже ввели имя {userName}. Используйте другую команду.");
+            Console.WriteLine($"Вы уже ввели имя {user.TelegramUserName}. Используйте другую команду.");
         }
         else
         {
             Console.Write("Введите Ваше имя: ");
 
-            var name = Console.ReadLine();
+            var name = Console.ReadLine()!;
 
             ValidateString(name);
 
-            userName = name!.Trim();
-            isNameTaken = true;
+            user = new ToDoUser(name.Trim());
         }
     }
 
@@ -175,9 +184,9 @@ public class Program
         Console.WriteLine($"ConsoleBot {AppVersion}\nДата создания: {_creationDate}");
     }
 
-    private static void Echo(bool isNameTaken, string[] inputParams)
+    private static void Echo(ToDoUser user, string[] inputParams)
     {
-        if (!isNameTaken)
+        if (user is null)
         {
             Console.WriteLine($"Вы не ввели свое имя, используйте для этого команду {StartEndpoint}.");
             return;
@@ -194,14 +203,16 @@ public class Program
         Console.WriteLine();
     }
 
-    private static void Help(bool isNameTaken)
+    private static void Help(ToDoUser user)
     {
         string echoEndpointText = string.Empty;
         string addTaskEndpointText = string.Empty;
         string showTasksEndpointText = string.Empty;
+        string showAllTasksEndpointText = string.Empty;
         string removeEndpointText = string.Empty;
+        string completeEndpointText = string.Empty;
 
-        if (isNameTaken)
+        if (user is not null)
         {
             echoEndpointText = 
                 $"{EchoEndpoint}\t\t - Вывести на экран текст, введенный после команды через пробел.\n";
@@ -210,10 +221,16 @@ public class Program
                 $"{AddTaskEndpoint}\t - Добавить в список новую задачу.\n";
 
             showTasksEndpointText =
-                $"{ShowTasksEndpoint}\t - Отобразить все задачи в списке.\n";
+                $"{ShowTasksEndpoint}\t - Отобразить активные задачи из списка.\n";
+
+            showAllTasksEndpointText =
+                $"{ShowAllTasksEndpoint}\t - Отобразить все задачи из списка.\n";
 
             removeEndpointText =
                 $"{RemoveTaskEndpoint}\t - Удалить задачу из списка по ее номеру.\n";
+
+            completeEndpointText =
+                $"{CompleteTaskEndpoint}\t - Завершить задачу (отметить выполненной) из списка по ее id.\n";
         }
 
         Console.WriteLine("Для взаимодействия с ботом используйте следующие команды:\n" +
@@ -223,30 +240,36 @@ public class Program
             echoEndpointText +
             addTaskEndpointText +
             showTasksEndpointText +
+            showAllTasksEndpointText +
             removeEndpointText +
+            completeEndpointText +
             $"{ExitEndpoint}\t\t - Выйти из программы.");
     }
 
-    private static void AddTask()
+    private static void AddTask(ToDoUser user)
     {
         Console.Write("Введите описание задачи: ");
 
-        var task = Console.ReadLine();
+        var newTask = Console.ReadLine();
 
-        ValidateString(task);
+        ValidateString(newTask);
         
         if (_tasks.Count == _maxTasksCount)
             throw new TaskCountLimitException(_maxTasksCount);
 
-        if (task!.Length > _maxTaskLength)
-            throw new TaskLengthLimitException(task.Length, _maxTaskLength);
+        if (newTask!.Length > _maxTaskLength)
+            throw new TaskLengthLimitException(newTask.Length, _maxTaskLength);
 
-        if (_tasks.Contains(task))
-            throw new DuplicateTaskException(task);
+        foreach (var task in _tasks)
+        {
+            if (task.Name.Equals(newTask))
+                throw new DuplicateTaskException(newTask);
+        }
 
-        _tasks.Add(task);
+        var newToDoItem = new ToDoItem(user, newTask);
+        _tasks.Add(newToDoItem);
 
-        Console.WriteLine($"Задача \"{task}\" добавлена.");
+        Console.WriteLine($"Задача \"{newToDoItem.Name}\" добавлена.");
     }
 
     private static bool ShowTasks()
@@ -257,12 +280,31 @@ public class Program
             return false;
         }
 
+        var counter = 0;
+
         for (int i = 0; i < _tasks.Count; i++)
         {
-            Console.WriteLine($"{i + 1}. {_tasks[i]}");
+            if (_tasks[i].State.Equals(ToDoItemState.Active))
+            {
+                Console.WriteLine($"{++counter}. {_tasks[i]}");
+            }
         }
 
         return true;
+    }
+
+    private static void ShowAllTasks()
+    {
+        if (_tasks.Count == 0)
+        {
+            Console.WriteLine("Список задач пуст.");
+            return;
+        }
+
+        for (int i = 0; i < _tasks.Count; i++)
+        {
+            Console.WriteLine($"{i + 1}. ({_tasks[i].State}) {_tasks[i]}");
+        }
     }
 
     private static void RemoveTask()
@@ -279,6 +321,33 @@ public class Program
 
         _tasks.Remove(task);
         Console.WriteLine($"Задача \"{task}\" удалена.");
+    }
+
+    private static void CompleteTask(string[] inputParams)
+    {
+        if (inputParams.Length != 1)
+        {
+            Console.WriteLine("Введите некорректное значение id задачи.");
+            return;
+        }
+
+        var taskId = inputParams[0];
+        
+        ValidateString(taskId);
+
+        foreach (var task in _tasks)
+        {
+            if (task.Id.Equals(taskId))
+            {
+                task.State = ToDoItemState.Completed;
+                task.StateChangedAt = DateTime.UtcNow;
+
+                Console.WriteLine($"Задача \"{task}\" завершена.");
+                return;
+            }
+        }
+
+        Console.WriteLine($"Задача с id \"{taskId}\" не найдена.");
     }
 }
 
