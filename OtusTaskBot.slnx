@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="ConsoleAppBot/ConsoleBot.csproj" Id="8dba6b33-85f6-4803-990a-24ce03944590" />
+  <Project Path="Otus.ToDoList.ConsoleBot/Otus.ToDoList.ConsoleBot.csproj" />
 </Solution>
