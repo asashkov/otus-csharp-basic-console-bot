@@ -27,16 +27,16 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
 
     private static bool _initialized = false;
     */
-    private static ToDoUser? user = null;
+    private static ToDoUser? user;
 
     public void HandleUpdateAsync(ITelegramBotClient botClient, Update update)
     {
-        botClient.SendMessage(update.Message.Chat, "Привет!\n" +
-            $"Для взаимодействия доступны команды: {HelpEndpoint}, {InfoEndpoint}");
+        if (user is null)
+            botClient.SendMessage(update.Message.Chat, $"Привет!\nДля взаимодействия доступны команды: {HelpEndpoint}, {InfoEndpoint}");
 
         try
         {
-            DataEntryPrompt(botClient, update);
+            botClient.SendMessage(update.Message.Chat, $"Пожалуйста, введите команду: ");
 
             var input = Console.ReadLine();
             string[] inputParams = [];
@@ -112,12 +112,6 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
         throw new ArgumentException($"Допустимое значение от {min} до {max}.");
     }
     */
-    private static void DataEntryPrompt(ITelegramBotClient botClient, Update update)
-    {
-        string greating = user is null ? "Пожалуйста," : $"{user.TelegramUserName}, пожалуйста,";
-
-        botClient.SendMessage(update.Message.Chat, $"{greating} введите команду: ");
-    }
 
     private static void Start(ITelegramBotClient botClient, Update update, IUserService userService)
     {
