@@ -1,30 +1,41 @@
 ﻿namespace ConsoleBot;
 
-public class ToDoService : IToDoService
+public class ToDoService(int maxTasksCount, int maxTaskLength) : IToDoService
 {
-    private IReadOnlyList<ToDoItem> _toDoItems = [];
-    private const int MaxTasksCount = 100;
-    private const int MaxTaskLength = 100;
+    private readonly IReadOnlyList<ToDoItem> _toDoItems = [];
+    private readonly int _maxTasksCount = maxTasksCount;
+    private readonly int _maxTaskLength = maxTaskLength;
 
     public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
     {
-        return _toDoItems;
+        IReadOnlyList<ToDoItem> activeItems = [];
+
+        foreach (var item in _toDoItems)
+            if (item.User.UserId.Equals(userId))
+                _ = activeItems.Append(item);
+
+        return activeItems;
     }
 
     //Возвращает ToDoItem для UserId со статусом Active
     public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
     {
-        //???
-        return (IReadOnlyList<ToDoItem>)_toDoItems.Select(item => item.State.Equals(ToDoItemState.Active));
+        IReadOnlyList<ToDoItem> activeItems = [];
+
+        foreach (var item in _toDoItems)
+            if (item.User.UserId.Equals(userId) && item.State.Equals(ToDoItemState.Active))
+                _ = activeItems.Append(item);
+
+        return activeItems;
     }
 
     public ToDoItem Add(ToDoUser user, string name)
     {
-        if (_toDoItems.Count == MaxTasksCount)
-            throw new ArgumentOutOfRangeException($"Превышено максимальное количество задач: {MaxTasksCount}");
+        if (_toDoItems.Count == _maxTasksCount)
+            throw new ArgumentOutOfRangeException($"Превышено максимальное количество задач: {_maxTasksCount}");
 
-        if (name!.Length > MaxTaskLength)
-            throw new ArgumentException($"Превышено максимальное значение длины названия задачи: {MaxTaskLength}");
+        if (name!.Length > _maxTaskLength)
+            throw new ArgumentException($"Превышено максимальное значение длины названия задачи: {_maxTaskLength}");
 
         foreach (var task in _toDoItems)
         {
@@ -53,12 +64,11 @@ public class ToDoService : IToDoService
 
     public void Delete(Guid id)
     {
-        foreach (var item in _toDoItems)
+        if (_toDoItems is List<ToDoItem> mutableList)
         {
-            if (item.Id.Equals(id))
-            {
-                //item;
-            }
+            foreach (var item in mutableList)
+                if (item.Id.Equals(id))
+                    mutableList.Remove(item);
         }
     }
 }

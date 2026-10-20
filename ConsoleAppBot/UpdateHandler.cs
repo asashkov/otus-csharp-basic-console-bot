@@ -5,7 +5,7 @@ namespace ConsoleBot;
 
 internal class UpdateHandler(IUserService userService, IToDoService toDoService) : IUpdateHandler
 {
-    private static DateOnly _creationDate = new(2026, 9, 5);
+    private static readonly DateOnly _creationDate = new(2026, 9, 5);
     private const string AppVersion = "0.3.0";
 
     private const string StartEndpoint = "/start";
@@ -18,21 +18,11 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
     private const string ShowAllTasksEndpoint = "/showalltasks";
     private const string RemoveTaskEndpoint = "/removetask";
     private const string CompleteTaskEndpoint = "/completetask";
-    /*
-    private const int MinTasksCount = 1;
-    private const int MinTaskLength = 1;
-
-    private static int _maxTasksCount = 100;
-    private static int _maxTaskLength = 100;
-
-    private static bool _initialized = false;
-    */
-    private static ToDoUser? user;
 
     public void HandleUpdateAsync(ITelegramBotClient botClient, Update update)
     {
-        if (user is null)
-            botClient.SendMessage(update.Message.Chat, $"Привет!\nДля взаимодействия доступны команды: {HelpEndpoint}, {InfoEndpoint}");
+        botClient.SendMessage(update.Message.Chat, "Привет!\n" +
+            $"Для взаимодействия доступны команды: {HelpEndpoint}, {InfoEndpoint}");
 
         try
         {
@@ -54,22 +44,22 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
                     Start(botClient, update, userService);
                     break;
                 case HelpEndpoint:
-                    Help(botClient, update);
+                    Help(botClient, update, userService);
                     break;
                 case InfoEndpoint:
                     Info(botClient, update);
                     break;
                 case AddTaskEndpoint:
-                    AddTask(botClient, update, toDoService, inputParams);
+                    AddTask(botClient, update, toDoService, userService, inputParams);
                     break;
                 case ShowTasksEndpoint:
-                    ShowTasks(botClient, update, toDoService);
+                    ShowTasks(botClient, update, toDoService, userService);
                     break;
                 case ShowAllTasksEndpoint:
-                    ShowAllTasks(botClient, update, toDoService);
+                    ShowAllTasks(botClient, update, toDoService, userService);
                     break;
                 case RemoveTaskEndpoint:
-                    RemoveTask(botClient, update, toDoService, inputParams);
+                    RemoveTask(botClient, update, toDoService, userService, inputParams);
                     break;
                 case CompleteTaskEndpoint:
                     CompleteTask(botClient, update, toDoService, inputParams);
@@ -81,13 +71,21 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
                     break;
             }
         }
-        catch (Exception e)
+        catch (TaskCountLimitException e)
         {
-            botClient.SendMessage(update.Message.Chat, $"Произошла непредвиденная ошибка:\n" +
-                $"Type: {e.GetType}\n" +
-                $"Message: {e.Message}\n" +
-                $"Stacktrace: {e.StackTrace}\n" +
-                $"InnerException: {e?.InnerException?.Message}");
+            Console.WriteLine(e.Message);
+        }
+        catch (TaskLengthLimitException e)
+        {
+            Console.WriteLine(e.Message);
+        }
+        catch (DuplicateTaskException e)
+        {
+            Console.WriteLine(e.Message);
+        }
+        catch (ArgumentException e)
+        {
+            Console.WriteLine(e.Message);
         }
     }
 
@@ -98,40 +96,12 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
             throw new ArgumentException("Значение должно быть не null, не пустой строкой и иметь символы кроме пробела.");
         }
     }
-    /*
-    private static int ParseAndValidateInt(string? str, int min, int max)
-    {
-        if (int.TryParse(str!, out int parsedValue))
-        {
-            if (parsedValue >= min && parsedValue <= max)
-            {
-                return parsedValue;
-            }
-        }
-
-        throw new ArgumentException($"Допустимое значение от {min} до {max}.");
-    }
-    */
 
     private static void Start(ITelegramBotClient botClient, Update update, IUserService userService)
     {
-        user = userService.GetUser(update.Message.From.Id);
+        var user = userService.GetUser(update.Message.From.Id) ?? userService.RegisterUser(update.Message.From.Id, update.Message.From.Username!);
 
-        if (user is null)
-            userService.RegisterUser(update.Message.From.Id, update.Message.From.Username!);
-        /*
-        if (!_initialized)
-        {
-            botClient.SendMessage(update.Message.Chat, "Введите максимально допустимое количество задач: ");
-
-            _maxTasksCount = ParseAndValidateInt(Console.ReadLine()!, MinTasksCount, _maxTasksCount);
-
-            botClient.SendMessage(update.Message.Chat, "Введите максимально допустимую длину задачи: ");
-
-            _maxTaskLength = ParseAndValidateInt(Console.ReadLine()!, MinTaskLength, _maxTaskLength);
-
-            _initialized = true;
-        }*/
+        botClient.SendMessage(update.Message.Chat, $"Вы вошли как пользователь '{user.TelegramUserName}'");
     }
 
     private static void Info(ITelegramBotClient botClient, Update update)
@@ -139,7 +109,7 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
         botClient.SendMessage(update.Message.Chat, $"ConsoleBot {AppVersion}\nДата создания: {_creationDate}");
     }
 
-    private static void Help(ITelegramBotClient botClient, Update update)
+    private static void Help(ITelegramBotClient botClient, Update update, IUserService userService)
     {
         string startEndpointText = string.Empty;
         string addTaskEndpointText = string.Empty;
@@ -148,6 +118,8 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
         string removeEndpointText = string.Empty;
         string completeEndpointText = string.Empty;
         string exitEndpointText = string.Empty;
+
+        var user = userService.GetUser(update.Message.From.Id);
 
         if (user is not null)
         {
@@ -184,39 +156,40 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
             exitEndpointText);
     }
 
-    private static void AddTask(ITelegramBotClient botClient, Update update, IToDoService toDoService, string[] inputParams)
+    private static void AddTask(ITelegramBotClient botClient, Update update, IToDoService toDoService, IUserService userService, string[] inputParams)
     {
         var newTask = string.Join(" ", inputParams);
 
         ValidateString(newTask);
 
+        var user = userService.GetUser(update.Message.From.Id);
+
         toDoService.Add(user!, newTask);
         botClient.SendMessage(update.Message.Chat, $"Задача \"{newTask}\" добавлена.");
     }
 
-    private static bool ShowTasks(ITelegramBotClient botClient, Update update, IToDoService toDoService)
+    private static bool ShowTasks(ITelegramBotClient botClient, Update update, IToDoService toDoService, IUserService userService)
     {
+        var user = userService.GetUser(update.Message.From.Id);
         var activeTasks = toDoService.GetActiveByUserId(user!.UserId);
-        var hasActiveTasks = false;
 
         if (activeTasks.Count == 0)
         {
             botClient.SendMessage(update.Message.Chat, "Список задач пуст.");
-            return hasActiveTasks;
+            return false;
         }
-
-        hasActiveTasks = true;
 
         for (int i = 0; i < activeTasks.Count; i++)
         {
             botClient.SendMessage(update.Message.Chat, $"{i + 1}. {activeTasks[i]}");
         }
 
-        return hasActiveTasks;
+        return true;
     }
 
-    private static void ShowAllTasks(ITelegramBotClient botClient, Update update, IToDoService toDoService)
+    private static void ShowAllTasks(ITelegramBotClient botClient, Update update, IToDoService toDoService, IUserService userService)
     {
+        var user = userService.GetUser(update.Message.From.Id);
         var tasks = toDoService.GetAllByUserId(user!.UserId);
 
         if (tasks.Count == 0)
@@ -231,12 +204,7 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
         }
     }
 
-    private static void RemoveTask(
-        ITelegramBotClient botClient,
-        Update update,
-        IToDoService toDoService,
-        string[] inputParams
-        )
+    private static void RemoveTask(ITelegramBotClient botClient, Update update, IToDoService toDoService, IUserService userService, string[] inputParams)
     {
         if (inputParams.Length != 1)
         {
@@ -244,7 +212,7 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
             return;
         }
 
-        if (!ShowTasks(botClient, update, toDoService))
+        if (!ShowTasks(botClient, update, toDoService, userService))
         {
             return;
         }
@@ -279,7 +247,7 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
         if (Guid.TryParse(taskId, out Guid result))
         {
             toDoService.MarkCompleted(result);
-            botClient.SendMessage(update.Message.Chat, $"Задача с id \"{taskId}\" завершена.");
+            botClient.SendMessage(update.Message.Chat, $"Задача с id \"{taskId}\" выполнена.");
         }
         else
         {
