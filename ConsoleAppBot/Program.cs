@@ -29,6 +29,8 @@ public class Program
                 _initialized = true;
             }
 
+            Console.WriteLine("Для взаимодействия доступны команды: /help, /info");
+
             var userService = new UserService();
             var toDoService = new ToDoService(_maxTasksCount, _maxTaskLength);
             var handler = new UpdateHandler(userService, toDoService);

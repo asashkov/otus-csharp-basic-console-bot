@@ -21,14 +21,9 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
 
     public void HandleUpdateAsync(ITelegramBotClient botClient, Update update)
     {
-        botClient.SendMessage(update.Message.Chat, "Привет!\n" +
-            $"Для взаимодействия доступны команды: {HelpEndpoint}, {InfoEndpoint}");
-
         try
         {
-            botClient.SendMessage(update.Message.Chat, $"Пожалуйста, введите команду: ");
-
-            var input = Console.ReadLine();
+            var input = update.Message.Text;
             string[] inputParams = [];
 
             if (!string.IsNullOrWhiteSpace(input))
@@ -41,7 +36,7 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
             switch (input)
             {
                 case StartEndpoint:
-                    Start(botClient, update, userService);
+                    Start(update, userService);
                     break;
                 case HelpEndpoint:
                     Help(botClient, update, userService);
@@ -73,19 +68,19 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
         }
         catch (TaskCountLimitException e)
         {
-            Console.WriteLine(e.Message);
+            botClient.SendMessage(update.Message.Chat, e.Message);
         }
         catch (TaskLengthLimitException e)
         {
-            Console.WriteLine(e.Message);
+            botClient.SendMessage(update.Message.Chat, e.Message);
         }
         catch (DuplicateTaskException e)
         {
-            Console.WriteLine(e.Message);
+            botClient.SendMessage(update.Message.Chat, e.Message);
         }
         catch (ArgumentException e)
         {
-            Console.WriteLine(e.Message);
+            botClient.SendMessage(update.Message.Chat, e.Message);
         }
     }
 
@@ -97,11 +92,10 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
         }
     }
 
-    private static void Start(ITelegramBotClient botClient, Update update, IUserService userService)
+    private static void Start(Update update, IUserService userService)
     {
-        var user = userService.GetUser(update.Message.From.Id) ?? userService.RegisterUser(update.Message.From.Id, update.Message.From.Username!);
-
-        botClient.SendMessage(update.Message.Chat, $"Вы вошли как пользователь '{user.TelegramUserName}'");
+        if (userService.GetUser(update.Message.From.Id) is null)
+            userService.RegisterUser(update.Message.From.Id, update.Message.From.Username!);
     }
 
     private static void Info(ITelegramBotClient botClient, Update update)
@@ -111,21 +105,18 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
 
     private static void Help(ITelegramBotClient botClient, Update update, IUserService userService)
     {
-        string startEndpointText = string.Empty;
+        string startEndpointText = $"{StartEndpoint}\t\t - Точка входа. Зарегистрированный пользователь имеет доступ к большему количеству команд.\n";
         string addTaskEndpointText = string.Empty;
         string showTasksEndpointText = string.Empty;
         string showAllTasksEndpointText = string.Empty;
         string removeEndpointText = string.Empty;
         string completeEndpointText = string.Empty;
-        string exitEndpointText = string.Empty;
+        string exitEndpointText = $"{ExitEndpoint}\t\t - Выйти из программы.";
 
         var user = userService.GetUser(update.Message.From.Id);
 
         if (user is not null)
         {
-            startEndpointText =
-                $"{StartEndpoint}\t\t - Точка входа. Введите свое имя для доступа к большему количеству команд.\n";
-
             addTaskEndpointText =
                 $"{AddTaskEndpoint}\t - Добавить в список новую задачу.\n";
 
@@ -140,8 +131,6 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
 
             completeEndpointText =
                 $"{CompleteTaskEndpoint}\t - Завершить задачу (отметить выполненной) из списка по ее id.\n";
-
-            exitEndpointText = $"{ExitEndpoint}\t\t - Выйти из программы.";
         }
 
         botClient.SendMessage(update.Message.Chat, "Для взаимодействия используйте следующие команды:\n" +
@@ -212,11 +201,6 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
             return;
         }
 
-        if (!ShowTasks(botClient, update, toDoService, userService))
-        {
-            return;
-        }
-
         var taskId = inputParams[0];
 
         ValidateString(taskId);
@@ -228,7 +212,7 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
         }
         else
         {
-            botClient.SendMessage(update.Message.Chat, $"Задача с id \"{taskId}\" не найдена.");
+            botClient.SendMessage(update.Message.Chat, $"Вы ввели некорректный id задачи: {taskId}");
         }
     }
 

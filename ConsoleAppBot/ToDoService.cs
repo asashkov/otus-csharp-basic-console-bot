@@ -2,29 +2,29 @@
 
 public class ToDoService(int maxTasksCount, int maxTaskLength) : IToDoService
 {
-    private readonly IReadOnlyList<ToDoItem> _toDoItems = [];
+    private readonly List<ToDoItem> _toDoItems = [];
     private readonly int _maxTasksCount = maxTasksCount;
     private readonly int _maxTaskLength = maxTaskLength;
 
     public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
     {
-        IReadOnlyList<ToDoItem> activeItems = [];
+        List<ToDoItem> userItems = [];
 
         foreach (var item in _toDoItems)
             if (item.User.UserId.Equals(userId))
-                _ = activeItems.Append(item);
+                userItems.Add(item);
 
-        return activeItems;
+        return userItems;
     }
 
     //Возвращает ToDoItem для UserId со статусом Active
     public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
     {
-        IReadOnlyList<ToDoItem> activeItems = [];
+        List<ToDoItem> activeItems = [];
 
         foreach (var item in _toDoItems)
             if (item.User.UserId.Equals(userId) && item.State.Equals(ToDoItemState.Active))
-                _ = activeItems.Append(item);
+                activeItems.Add(item);
 
         return activeItems;
     }
@@ -45,7 +45,7 @@ public class ToDoService(int maxTasksCount, int maxTaskLength) : IToDoService
 
         var newItem = new ToDoItem(user, name);
 
-        _ = _toDoItems.Append(newItem);
+        _toDoItems.Add(newItem);
 
         return newItem;
     }
@@ -64,11 +64,11 @@ public class ToDoService(int maxTasksCount, int maxTaskLength) : IToDoService
 
     public void Delete(Guid id)
     {
-        if (_toDoItems is List<ToDoItem> mutableList)
-        {
-            foreach (var item in mutableList)
-                if (item.Id.Equals(id))
-                    mutableList.Remove(item);
-        }
+        foreach (var item in _toDoItems)
+            if (item.Id.Equals(id))
+            {
+                _toDoItems.Remove(item);
+                return;
+            }
     }
 }
