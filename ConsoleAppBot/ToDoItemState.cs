@@ -1,6 +1,6 @@
 ﻿namespace ConsoleBot;
 
-internal enum ToDoItemState
+public enum ToDoItemState
 {
     Active,
     Completed

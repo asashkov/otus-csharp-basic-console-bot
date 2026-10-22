@@ -1,10 +1,10 @@
 ﻿namespace ConsoleBot;
 
-internal class ToDoItem
+public class ToDoItem
 {
     public Guid Id { get; init; }
 
-    public ToDoUser User { get; private set; }
+    public ToDoUser User { get; set; }
 
     public string Name { get; private set; }
 
