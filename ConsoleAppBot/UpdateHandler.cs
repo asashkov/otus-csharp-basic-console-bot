@@ -36,7 +36,7 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
             switch (input)
             {
                 case StartEndpoint:
-                    Start(update, userService);
+                    Start(botClient, update, userService);
                     break;
                 case HelpEndpoint:
                     Help(botClient, update, userService);
@@ -54,7 +54,7 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
                     ShowAllTasks(botClient, update, toDoService, userService);
                     break;
                 case RemoveTaskEndpoint:
-                    RemoveTask(botClient, update, toDoService, userService, inputParams);
+                    RemoveTask(botClient, update, toDoService, inputParams);
                     break;
                 case CompleteTaskEndpoint:
                     CompleteTask(botClient, update, toDoService, inputParams);
@@ -92,10 +92,12 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
         }
     }
 
-    private static void Start(Update update, IUserService userService)
+    private static void Start(ITelegramBotClient botClient, Update update, IUserService userService)
     {
-        if (userService.GetUser(update.Message.From.Id) is null)
+        var user = userService.GetUser(update.Message.From.Id) ??
             userService.RegisterUser(update.Message.From.Id, update.Message.From.Username!);
+
+        botClient.SendMessage(update.Message.Chat, $"Вы вошли как пользователь {user.TelegramUserName}");
     }
 
     private static void Info(ITelegramBotClient botClient, Update update)
@@ -193,7 +195,7 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService)
         }
     }
 
-    private static void RemoveTask(ITelegramBotClient botClient, Update update, IToDoService toDoService, IUserService userService, string[] inputParams)
+    private static void RemoveTask(ITelegramBotClient botClient, Update update, IToDoService toDoService, string[] inputParams)
     {
         if (inputParams.Length != 1)
         {

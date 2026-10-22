@@ -30,6 +30,7 @@ public class Program
             }
 
             Console.WriteLine("Для взаимодействия доступны команды: /help, /info");
+            Console.WriteLine();
 
             var userService = new UserService();
             var toDoService = new ToDoService(_maxTasksCount, _maxTaskLength);

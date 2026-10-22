@@ -4,9 +4,9 @@ public class ToDoUser
 {
     public Guid UserId { get; init; }
 
-    public string TelegramUserName { get; set; }
+    public string TelegramUserName { get; private set; }
 
-    public long TelegramUserId { get; set; }
+    public long TelegramUserId { get; private set; }
 
     public DateTime RegisteredAt { get; private set; }
 
