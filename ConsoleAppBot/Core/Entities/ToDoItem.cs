@@ -1,4 +1,4 @@
-﻿namespace ConsoleBot;
+﻿namespace ConsoleBot.Core.Entities;
 
 public class ToDoItem
 {

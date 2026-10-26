@@ -1,4 +1,4 @@
-﻿namespace ConsoleBot;
+﻿namespace ConsoleBot.Core.Exceptions;
 
 public class TaskLengthLimitException(int taskLength, int taskLengthLimit) : Exception()
 {

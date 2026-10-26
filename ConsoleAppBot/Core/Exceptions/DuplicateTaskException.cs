@@ -1,4 +1,4 @@
-﻿namespace ConsoleBot;
+﻿namespace ConsoleBot.Core.Exceptions;
 
 public class DuplicateTaskException(string task) : Exception()
 {
