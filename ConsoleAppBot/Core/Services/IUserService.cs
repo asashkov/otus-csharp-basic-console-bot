@@ -1,4 +1,6 @@
-﻿namespace ConsoleBot;
+﻿using ConsoleBot.Core.Entities;
+
+namespace ConsoleBot.Core.Services;
 
 internal interface IUserService
 {

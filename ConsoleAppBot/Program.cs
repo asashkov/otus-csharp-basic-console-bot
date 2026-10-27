@@ -1,4 +1,7 @@
-﻿using Otus.ToDoList.ConsoleBot;
+﻿using ConsoleBot.Core.Services;
+using ConsoleBot.Infrastructure.DataAccess;
+using ConsoleBot.TelegramBot;
+using Otus.ToDoList.ConsoleBot;
 
 namespace ConsoleBot;
 
@@ -32,9 +35,12 @@ public class Program
             Console.WriteLine("Для взаимодействия доступны команды: /help, /info");
             Console.WriteLine();
 
-            var userService = new UserService();
-            var toDoService = new ToDoService(_maxTasksCount, _maxTaskLength);
-            var handler = new UpdateHandler(userService, toDoService);
+            var userRepository = new InMemoryUserRepository();
+            var userService = new UserService(userRepository);
+            var toDoRepository = new InMemoryToDoRepository();
+            var toDoService = new ToDoService(toDoRepository, _maxTasksCount, _maxTaskLength);
+            var toDoReportService = new ToDoReportService(toDoRepository);
+            var handler = new UpdateHandler(userService, toDoService, toDoReportService);
             var botClient = new ConsoleBotClient();
 
             botClient.StartReceiving(handler);
