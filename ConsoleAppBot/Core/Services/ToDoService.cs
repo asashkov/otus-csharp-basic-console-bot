@@ -1,5 +1,6 @@
 ﻿using ConsoleBot.Core.DataAccess;
 using ConsoleBot.Core.Entities;
+using ConsoleBot.Core.Exceptions;
 
 namespace ConsoleBot.Core.Services;
 
@@ -22,13 +23,13 @@ public class ToDoService(IToDoRepository repository, int maxTasksCount, int maxT
     public ToDoItem Add(ToDoUser user, string name)
     {
         if (repository.CountActive(user.UserId) == _maxTasksCount)
-            throw new ArgumentOutOfRangeException($"Превышено максимальное количество задач: {_maxTasksCount}");
+            throw new TaskCountLimitException(_maxTasksCount);
 
         if (name!.Length > _maxTaskLength)
-            throw new ArgumentException($"Превышено максимальное значение длины названия задачи: {_maxTaskLength}");
+            throw new TaskLengthLimitException(name!.Length, _maxTaskLength);
 
         if (repository.ExistsByName(user.UserId, name))
-            throw new ArgumentException($"Задача с именем \"{name}\" уже существует");
+            throw new DuplicateTaskException(name);
 
         var newItem = new ToDoItem(user, name);
 

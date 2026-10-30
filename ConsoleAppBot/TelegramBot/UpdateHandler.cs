@@ -109,7 +109,7 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService,
         var user = userService.GetUser(update.Message.From.Id) ??
             userService.RegisterUser(update.Message.From.Id, update.Message.From.Username!);
 
-        botClient.SendMessage(update.Message.Chat, $"Вы вошли как пользователь {user.TelegramUserName}");
+        botClient.SendMessage(update.Message.Chat, $"{user.TelegramUserName}, введите команду для взаимодействия:");
     }
 
     private static void Info(ITelegramBotClient botClient, Update update)
@@ -278,9 +278,11 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService,
 
     private static void Find(ITelegramBotClient botClient, Update update, IToDoService toDoService, IUserService userService, string[] inputParams)
     {
-        if (inputParams.Length != 1)
+        var expectedParamsCount = 1;
+
+        if (inputParams.Length != expectedParamsCount)
         {
-            botClient.SendMessage(update.Message.Chat, "Введите корректное значение id задачи.");
+            botClient.SendMessage(update.Message.Chat, $"Вы превысили допустимое количество параметров для данной команды: {expectedParamsCount}.");
             return;
         }
 
