@@ -4,11 +4,11 @@ namespace ConsoleBot.Core.Services;
 
 internal class ToDoReportService(IToDoRepository toDoRepository) : IToDoReportService
 {
-    public (int total, int completed, int active, DateTime generatedAt) GetUserStats(Guid userId)
+    public async Task<(int total, int completed, int active, DateTime generatedAt)> GetUserStats(Guid userId, CancellationToken ct)
     {
-        var totalItemsCount = toDoRepository.GetAllByUserId(userId).Count;
-        var completedItemsCount = toDoRepository.GetCompletedByUserId(userId).Count;
-        var activeItemsCount = toDoRepository.GetActiveByUserId(userId).Count;
+        var totalItemsCount = (await toDoRepository.GetAllByUserId(userId, ct)).Count;
+        var completedItemsCount = (await toDoRepository.GetCompletedByUserId(userId, ct)).Count;
+        var activeItemsCount = (await toDoRepository.GetActiveByUserId(userId, ct)).Count;
         var generatedDate = DateTime.UtcNow;
 
         return (totalItemsCount, completedItemsCount, activeItemsCount, generatedDate);
