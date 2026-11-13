@@ -5,17 +5,17 @@ namespace ConsoleBot.Core.Services;
 
 internal class UserService(IUserRepository userRepository) : IUserService
 {
-    public ToDoUser RegisterUser(long telegramUserId, string telegramUserName)
+    public async Task<ToDoUser> RegisterUser(long telegramUserId, string telegramUserName, CancellationToken ct)
     {
         var newUser = new ToDoUser(telegramUserId, telegramUserName);
 
-        userRepository.Add(newUser);
+        await userRepository.Add(newUser, ct);
 
         return newUser;
     }
 
-    public ToDoUser? GetUser(long telegramUserId)
+    public async Task<ToDoUser?> GetUser(long telegramUserId, CancellationToken ct)
     {
-        return userRepository.GetUserByTelegramUserId(telegramUserId);
+        return await userRepository.GetUserByTelegramUserId(telegramUserId, ct);
     }
 }
