@@ -7,34 +7,34 @@ internal class InMemoryToDoRepository : IToDoRepository
 {
     private readonly List<ToDoItem> _itemList = [];
     
-    public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
+    public async Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken ct)
     {
         return _itemList.Where(item => item.User.UserId.Equals(userId)).ToList();
     }
 
     //Возвращает ToDoItem для UserId со статусом Active
-    public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
+    public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken ct)
     {
         return _itemList.Where(item => item.User.UserId.Equals(userId)&& item.State.Equals(ToDoItemState.Active)).ToList();
     }
 
     //Возвращает ToDoItem для UserId со статусом Completed
-    public IReadOnlyList<ToDoItem> GetCompletedByUserId(Guid userId)
+    public async Task<IReadOnlyList<ToDoItem>> GetCompletedByUserId(Guid userId, CancellationToken ct)
     {
         return _itemList.Where(item => item.User.UserId.Equals(userId) && item.State.Equals(ToDoItemState.Completed)).ToList();
     }
 
-    public ToDoItem? Get(Guid id)
+    public async Task<ToDoItem?> Get(Guid id, CancellationToken ct)
     {
         return _itemList.SingleOrDefault(item => item.Id.Equals(id));
     }
 
-    public void Add(ToDoItem item)
+    public async Task Add(ToDoItem item, CancellationToken ct)
     {
         _itemList.Add(item);
     }
 
-    public void Update(ToDoItem item)
+    public async Task Update(ToDoItem item, CancellationToken ct)
     {
         var itemIndex = _itemList.FindIndex(listItem => listItem.Id.Equals(item.Id));
 
@@ -42,25 +42,25 @@ internal class InMemoryToDoRepository : IToDoRepository
             _itemList[itemIndex] = item;
     }
 
-    public void Delete(Guid id)
+    public async Task Delete(Guid id, CancellationToken ct)
     {
         _itemList.RemoveAll(item => item.Id.Equals(id));
     }
 
     //Проверяет есть ли задача с таким именем у пользователя
-    public bool ExistsByName(Guid userId, string name)
+    public async Task<bool> ExistsByName(Guid userId, string name, CancellationToken ct)
     {
         return _itemList.Exists(item => item.User.UserId.Equals(userId) && item.Name.Equals(name));
     }
 
     //Возвращает количество активных задач у пользователя
-    public int CountActive(Guid userId)
+    public async Task<int> CountActive(Guid userId, CancellationToken ct)
     {
-        return GetActiveByUserId(userId).Count;
+        return (await GetActiveByUserId(userId, ct)).Count;
     }
 
-    public IReadOnlyList<ToDoItem> Find(Guid userId, Func<ToDoItem, bool> predicate)
+    public async Task<IReadOnlyList<ToDoItem>> Find(Guid userId, Func<ToDoItem, bool> predicate, CancellationToken ct)
     {
-        return GetAllByUserId(userId).Where(predicate).ToList();
+        return (await GetAllByUserId(userId, ct)).Where(predicate).ToList();
     }
 }

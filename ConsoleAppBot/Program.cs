@@ -35,6 +35,7 @@ public class Program
             Console.WriteLine("Для взаимодействия доступны команды: /help, /info");
             Console.WriteLine();
 
+            using var cts = new CancellationTokenSource();
             var userRepository = new InMemoryUserRepository();
             var userService = new UserService(userRepository);
             var toDoRepository = new InMemoryToDoRepository();
@@ -42,8 +43,8 @@ public class Program
             var toDoReportService = new ToDoReportService(toDoRepository);
             var handler = new UpdateHandler(userService, toDoService, toDoReportService);
             var botClient = new ConsoleBotClient();
-
-            botClient.StartReceiving(handler);
+            
+            botClient.StartReceiving(handler, cts.Token);
         }
         catch (Exception e)
         {
