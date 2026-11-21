@@ -1,7 +1,9 @@
 ﻿using ConsoleBot.Core.Services;
 using ConsoleBot.Infrastructure.DataAccess;
 using ConsoleBot.TelegramBot;
-using Otus.ToDoList.ConsoleBot;
+using Telegram.Bot;
+using Telegram.Bot.Polling;
+using Telegram.Bot.Types.Enums;
 
 namespace ConsoleBot;
 
@@ -15,10 +17,13 @@ public class Program
 
     private static bool _initialized = false;
 
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
+            string token = Environment.GetEnvironmentVariable("OTUS_TG_BOT_TOKEN", EnvironmentVariableTarget.User)!;
+            ITelegramBotClient botClient = new TelegramBotClient(token);
+
             if (!_initialized)
             {
                 Console.WriteLine("Введите максимально допустимое количество задач: ");
@@ -32,19 +37,41 @@ public class Program
                 _initialized = true;
             }
 
-            Console.WriteLine("Для взаимодействия доступны команды: /help, /info");
-            Console.WriteLine();
-
             using var cts = new CancellationTokenSource();
             var userRepository = new InMemoryUserRepository();
             var userService = new UserService(userRepository);
             var toDoRepository = new InMemoryToDoRepository();
             var toDoService = new ToDoService(toDoRepository, _maxTasksCount, _maxTaskLength);
             var toDoReportService = new ToDoReportService(toDoRepository);
-            var handler = new UpdateHandler(userService, toDoService, toDoReportService);
-            var botClient = new ConsoleBotClient();
-            
-            botClient.StartReceiving(handler, cts.Token);
+            var updateHandler = new UpdateHandler(userService, toDoService, toDoReportService);
+            var receiverOptions = new ReceiverOptions
+            {
+                AllowedUpdates = [UpdateType.Message],
+                DropPendingUpdates = true
+            };
+
+            botClient.StartReceiving(updateHandler, receiverOptions, cts.Token);
+
+            var me = botClient.GetMe().Result;
+
+            Console.WriteLine();
+            Console.WriteLine($"Бот запущен: @{me.Username}");
+            Console.WriteLine("Для взаимодействия доступны команды: /help, /info");
+            Console.WriteLine();
+            Console.WriteLine("Нажмите 'A' для выхода");
+
+            if (Console.ReadKey().Key.Equals(ConsoleKey.A))
+            {
+                Console.CancelKeyPress += (sender, eventArgs) =>
+                {
+                    eventArgs.Cancel = true;
+                    cts.Cancel();
+                };
+
+                Console.WriteLine();
+                Console.WriteLine("Завершение работы бота...");
+                return;
+            }
         }
         catch (Exception e)
         {
