@@ -8,7 +8,7 @@ namespace ConsoleBot.TelegramBot;
 internal class UpdateHandler(IUserService userService, IToDoService toDoService, IToDoReportService toDoReportService) : IUpdateHandler
 {
     private static readonly DateOnly _creationDate = new(2026, 9, 5);
-    private const string AppVersion = "0.5.0";
+    private const string AppVersion = "0.7.0";
 
     private const string StartEndpoint = "/start";
     private const string HelpEndpoint = "/help";

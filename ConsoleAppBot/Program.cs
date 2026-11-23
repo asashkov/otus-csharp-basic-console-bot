@@ -35,10 +35,12 @@ public class Program
             Console.WriteLine("Для взаимодействия доступны команды: /help, /info");
             Console.WriteLine();
 
+            var baseDir = @"C:\temp";
+
             using var cts = new CancellationTokenSource();
-            var userRepository = new InMemoryUserRepository();
+            var userRepository = new FileUserRepository(baseDir);
             var userService = new UserService(userRepository);
-            var toDoRepository = new InMemoryToDoRepository();
+            var toDoRepository = new FileToDoRepository(baseDir);
             var toDoService = new ToDoService(toDoRepository, _maxTasksCount, _maxTaskLength);
             var toDoReportService = new ToDoReportService(toDoRepository);
             var handler = new UpdateHandler(userService, toDoService, toDoReportService);
