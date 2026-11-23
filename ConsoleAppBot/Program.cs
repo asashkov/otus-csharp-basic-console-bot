@@ -17,7 +17,7 @@ public class Program
 
     private static bool _initialized = false;
 
-    static void Main(string[] args)
+    static async Task Main()
     {
         try
         {
@@ -52,14 +52,9 @@ public class Program
 
             botClient.StartReceiving(updateHandler, receiverOptions, cts.Token);
 
-            var me = botClient.GetMe().Result;
-
-            Console.WriteLine();
-            Console.WriteLine($"Бот запущен: @{me.Username}");
-            Console.WriteLine("Для взаимодействия доступны команды: /help, /info");
             Console.WriteLine();
             Console.WriteLine("Нажмите 'A' для выхода");
-
+            
             if (Console.ReadKey().Key.Equals(ConsoleKey.A))
             {
                 Console.CancelKeyPress += (sender, eventArgs) =>
@@ -72,6 +67,16 @@ public class Program
                 Console.WriteLine("Завершение работы бота...");
                 return;
             }
+            else
+            {
+                var me = await botClient.GetMe();
+
+                Console.WriteLine();
+                Console.WriteLine($"Бот запущен: @{me.Username}");
+                Console.WriteLine("Для взаимодействия доступны команды: /help, /info");
+            }            
+
+            await Task.Delay(Timeout.Infinite, cts.Token);
         }
         catch (Exception e)
         {

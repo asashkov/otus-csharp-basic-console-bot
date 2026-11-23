@@ -11,7 +11,7 @@ namespace ConsoleBot.TelegramBot;
 internal class UpdateHandler(IUserService userService, IToDoService toDoService, IToDoReportService toDoReportService) : IUpdateHandler
 {
     private static readonly DateOnly _creationDate = new(2026, 9, 5);
-    private const string AppVersion = "0.5.0";
+    private const string AppVersion = "0.6.0";
 
     private const string StartEndpoint = "/start";
     private const string HelpEndpoint = "/help";
@@ -29,17 +29,31 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService,
     private static readonly string[] _availableCommands =
     {
         StartEndpoint,
-        ShowAllTasksEndpoint,
+        AddTaskEndpoint,
         ShowTasksEndpoint,
-        ReportEndpoint
+        ShowAllTasksEndpoint,
+        RemoveTaskEndpoint,
+        CompleteTaskEndpoint,
+        FindEndpoint,
+        ReportEndpoint,
+        HelpEndpoint,
+        InfoEndpoint,
+        ExitEndpoint
     };
 
     private static readonly string[] _commandsDescriptions =
     {
         "Запустить бота",
-        "Показать все задачи",
+        "Добавить новую задачу",
         "Показать активные задачи",
-        "Сгенерировать отчет"
+        "Показать все задачи",
+        "Удалить задачу по ее ID",
+        "Завершить задачу по ее ID",
+        "Найти задачу по первым символам названия",
+        "Сгенерировать отчет по задачам",
+        "Отобразить справочную информацию по командам",
+        "Вывести версию и дату создания приложения",
+        "Завершение работы с ботом"
     };
 
     private static ToDoUser? _user = null;
@@ -162,7 +176,9 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService,
 
     private static async Task Help(ITelegramBotClient botClient, Update update, IUserService userService, CancellationToken ct)
     {
-        string startEndpointText = $"{StartEndpoint}\t\t - Начало работы с ботом.\n";
+        string startEndpointText = $"{StartEndpoint}\t\t - Запустить бота.\n";
+        string helpEndpointText = $"{HelpEndpoint}\t\t - Отобразить справочную информацию по командам.\n";
+        string infoEndpointText = $"{InfoEndpoint}\t\t - Вывести версию и дату создания приложения.\n";
         string addTaskEndpointText = string.Empty;
         string showTasksEndpointText = string.Empty;
         string showAllTasksEndpointText = string.Empty;
@@ -170,38 +186,38 @@ internal class UpdateHandler(IUserService userService, IToDoService toDoService,
         string completeEndpointText = string.Empty;
         string findEndpointText = string.Empty;
         string reportEndpointText = string.Empty;
-        string exitEndpointText = $"{ExitEndpoint}\t\t - Выйти из программы (Ctrl+C).";
+        string exitEndpointText = $"{ExitEndpoint}\t\t - Завершение работы с ботом.";
 
         var user = await userService.GetUser(update.Message!.From!.Id, ct);
 
         if (user is not null)
         {
             addTaskEndpointText =
-                $"{AddTaskEndpoint}\t - Добавить в список новую задачу.\n";
+                $"{AddTaskEndpoint}\t - Добавить новую задачу.\n";
 
             showTasksEndpointText =
-                $"{ShowTasksEndpoint}\t - Отобразить активные задачи из списка.\n";
+                $"{ShowTasksEndpoint}\t - Показать активные задачи.\n";
 
             showAllTasksEndpointText =
-                $"{ShowAllTasksEndpoint}\t - Отобразить все задачи из списка.\n";
+                $"{ShowAllTasksEndpoint}\t - Показать все задачи.\n";
 
             removeEndpointText =
-                $"{RemoveTaskEndpoint}\t - Удалить задачу из списка по ее id.\n";
+                $"{RemoveTaskEndpoint}\t - Удалить задачу по ее ID.\n";
 
             completeEndpointText =
-                $"{CompleteTaskEndpoint}\t - Завершить задачу (отметить выполненной) из списка по ее id.\n";
+                $"{CompleteTaskEndpoint}\t - Завершить задачу по ее ID.\n";
 
             findEndpointText =
                 $"{FindEndpoint}\t - Найти задачу по первым символам названия.\n";
 
             reportEndpointText =
-                $"{ReportEndpoint}\t - Сводная информация по всем задачам.\n";
+                $"{ReportEndpoint}\t - Сгенерировать отчет по задачам.\n";
         }
 
         await botClient.SendMessage(update.Message?.Chat, "Для взаимодействия используйте следующие команды:\n" +
             startEndpointText +
-            $"{HelpEndpoint}\t\t - Отобразить данную справочную информацию.\n" +
-            $"{InfoEndpoint}\t\t - Показать версию и дату создания приложения.\n" +
+            helpEndpointText +
+            infoEndpointText +
             addTaskEndpointText +
             showTasksEndpointText +
             showAllTasksEndpointText +
